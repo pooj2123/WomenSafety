@@ -1,0 +1,14 @@
+# data files
+*.pkl
+*.graphml
+*.csv
+
+# python
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+
+# env
+venv/
