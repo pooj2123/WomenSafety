@@ -18,3 +18,28 @@ def root():
     return {"message": "Women Safety Routing API Running"}
 
 app.include_router(navigation_router)
+
+import requests
+
+@app.get("/search")
+def search_location(q: str):
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": q,
+        "format": "json"
+    }
+
+    headers = {
+        "User-Agent": "women-safety-app"
+    }
+
+    res = requests.get(url, params=params, headers=headers)
+    data = res.json()
+
+    if not data:
+        return None
+
+    return {
+        "lat": float(data[0]["lat"]),
+        "lon": float(data[0]["lon"])
+    }

@@ -6,115 +6,119 @@ import {
   Polyline,
   useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getRoute } from "../services/api";
+import { searchLocation, getRoute } from "../services/api";
 
-// -----------------------------
-// Custom marker icons
-// -----------------------------
-const startIcon = new L.Icon({
-  iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-  iconSize: [32, 32],
-});
+const MapView = () => {
+  const [startText, setStartText] = useState("");
+  const [endText, setEndText] = useState("");
 
-const endIcon = new L.Icon({
-  iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-  iconSize: [32, 32],
-});
+  const [startPoint, setStartPoint] = useState(null);
+  const [endPoint, setEndPoint] = useState(null);
 
-// -----------------------------
-// Handle map clicks
-// -----------------------------
-function ClickHandler({ setPoints }) {
-  useMapEvents({
-    click(e) {
-      setPoints((prev) => {
-        // If already 2 points → reset with new start
-        if (prev.length >= 2) {
-          return [[e.latlng.lat, e.latlng.lng]];
+  const [shortestRoute, setShortestRoute] = useState([]);
+  const [safestRoute, setSafestRoute] = useState([]);
+
+  // 📍 Handle map click (optional manual selection)
+  const MapClickHandler = () => {
+    useMapEvents({
+      click(e) {
+        if (!startPoint) {
+          setStartPoint([e.latlng.lat, e.latlng.lng]);
+        } else {
+          setEndPoint([e.latlng.lat, e.latlng.lng]);
         }
-        return [...prev, [e.latlng.lat, e.latlng.lng]];
-      });
-    },
-  });
-  return null;
-}
+      },
+    });
+    return null;
+  };
 
-// -----------------------------
-// Main component
-// -----------------------------
-function MapView() {
-  const [points, setPoints] = useState([]);
-  const [route, setRoute] = useState(null);
+  // 🔍 Handle search (text → coords → route)
+  const handleSearch = async () => {
+    const start = await searchLocation(startText);
+    const end = await searchLocation(endText);
 
-  // -----------------------------
-  // Fetch route
-  // -----------------------------
-  const handleRoute = async () => {
-    if (points.length < 2) {
-      alert("Select start and end points");
+    if (!start || !end) {
+      alert("Invalid location");
       return;
     }
 
-    try {
-      const res = await getRoute(points[0], points[1]);
-      setRoute(res);
-    } catch (err) {
-      console.error("Error fetching route:", err);
-      alert("Failed to fetch route");
-    }
+    const result = await getRoute(
+      [start.lat, start.lon],
+      [end.lat, end.lon]
+    );
+
+    setStartPoint([start.lat, start.lon]);
+    setEndPoint([end.lat, end.lon]);
+
+    setShortestRoute(result.shortest_path || []);
+    setSafestRoute(result.safest_path || []);
   };
 
-  // -----------------------------
-  // Reset everything
-  // -----------------------------
+  // 🔄 Reset everything
   const handleReset = () => {
-    setPoints([]);
-    setRoute(null);
+    setStartPoint(null);
+    setEndPoint(null);
+    setShortestRoute([]);
+    setSafestRoute([]);
+    setStartText("");
+    setEndText("");
   };
 
   return (
     <div>
-      <MapContainer
-        center={[17.385, 78.486]} // Hyderabad default
-        zoom={13}
-        style={{ height: "80vh", width: "100%" }}
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {/* 🔍 Search UI */}
+      <div style={{ padding: "10px" }}>
+        <input
+          placeholder="Start location"
+          value={startText}
+          onChange={(e) => setStartText(e.target.value)}
+        />
 
-        <ClickHandler setPoints={setPoints} />
-
-        {/* Start Marker */}
-        {points[0] && <Marker position={points[0]} icon={startIcon} />}
-
-        {/* End Marker */}
-        {points[1] && <Marker position={points[1]} icon={endIcon} />}
-
-        {/* Shortest Path */}
-        {route && route.shortest_path && (
-          <Polyline positions={route.shortest_path} color="blue" />
-        )}
-
-        {/* Safest Path */}
-        {route && route.safest_path && (
-          <Polyline positions={route.safest_path} color="green" />
-        )}
-      </MapContainer>
-
-      {/* Buttons */}
-      <div style={{ textAlign: "center", marginTop: "10px" }}>
-        <button onClick={handleRoute}>Get Route</button>
-
-        <button
-          onClick={handleReset}
+        <input
+          placeholder="End location"
+          value={endText}
+          onChange={(e) => setEndText(e.target.value)}
           style={{ marginLeft: "10px" }}
-        >
+        />
+
+        <button onClick={handleSearch} style={{ marginLeft: "10px" }}>
+          Search
+        </button>
+
+        <button onClick={handleReset} style={{ marginLeft: "10px" }}>
           Reset
         </button>
       </div>
+
+      {/* 🗺️ Map */}
+      <MapContainer
+        center={[17.385, 78.486]} // Hyderabad default
+        zoom={13}
+        style={{ height: "90vh", width: "100%" }}
+      >
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        <MapClickHandler />
+
+        {/* 📍 Markers */}
+        {startPoint && <Marker position={startPoint} />}
+        {endPoint && <Marker position={endPoint} />}
+
+        {/* 🛣️ Routes */}
+        {shortestRoute.length > 0 && (
+          <Polyline positions={shortestRoute} color="blue" />
+        )}
+
+        {safestRoute.length > 0 && (
+          <Polyline positions={safestRoute} color="green" />
+        )}
+      </MapContainer>
     </div>
   );
-}
+};
 
 export default MapView;

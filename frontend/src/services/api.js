@@ -1,5 +1,20 @@
-export async function getRoute(start, end) {
-  const response = await fetch("http://127.0.0.1:8000/route", {
+export const searchLocation = async (query) => {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${query}`
+  );
+
+  const data = await res.json();
+
+  if (!data.length) return null;
+
+  return {
+    lat: parseFloat(data[0].lat),
+    lon: parseFloat(data[0].lon),
+  };
+};
+
+export const getRoute = async (start, end) => {
+  const res = await fetch("http://127.0.0.1:8000/route", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -12,5 +27,5 @@ export async function getRoute(start, end) {
     }),
   });
 
-  return response.json();
-}
+  return await res.json();
+};
