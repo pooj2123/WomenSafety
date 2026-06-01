@@ -2,9 +2,11 @@ import torch
 import random
 import pickle
 import os
+import torch.nn.functional as F
 
 from env import GraphEnv
 from dqn import DQN
+
 
 # -----------------------------
 # Load graph
@@ -19,6 +21,7 @@ with open(GRAPH_PATH, "rb") as f:
 
 print("Graph loaded successfully")
 
+
 # -----------------------------
 # Initialize environment + model
 # -----------------------------
@@ -29,15 +32,16 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 gamma = 0.99
 epsilon = 1.0
-epsilon_decay = 0.98
-epsilon_min = 0.1
+epsilon_decay = 0.999
+epsilon_min = 0.05
 
-episodes = 200
+episodes = 1000
 max_steps = 100
 
 nodes = list(G.nodes)
 
 print("Training started...\n")
+
 
 # -----------------------------
 # Training loop
@@ -62,7 +66,7 @@ for episode in range(episodes):
         if not actions:
             break
 
-        # Epsilon-greedy action selection
+        # Epsilon-greedy
         if random.random() < epsilon:
             action = random.choice(actions)
         else:
@@ -71,30 +75,31 @@ for episode in range(episodes):
             with torch.no_grad():
                 q_values = model(state_tensor)
 
-            action_idx = min(len(actions) - 1, torch.argmax(q_values).item())
+            action_idx = min(
+                len(actions) - 1,
+                torch.argmax(q_values).item()
+            )
+
             action = actions[action_idx]
 
-        # Environment step
         next_state, reward, done = env.step(action)
 
         total_reward += reward
 
-        # Convert to tensors
         state_tensor = torch.FloatTensor(state)
         next_tensor = torch.FloatTensor(next_state)
 
-        # Current Q values
         q_values = model(state_tensor)
 
-        # Target Q
+        action_idx = actions.index(action)
+        current_q = q_values[0][action_idx]
+
         with torch.no_grad():
             next_q_values = model(next_tensor)
-            target_q = reward + gamma * torch.max(next_q_values)
+            target_q = reward if done else reward + gamma * torch.max(next_q_values)
 
-        # Loss
-        loss = ((q_values[0] - target_q) ** 2).mean()
+        loss = F.mse_loss(current_q, target_q)
 
-        # Backprop
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -104,21 +109,21 @@ for episode in range(episodes):
         if done:
             break
 
-    # Decay exploration
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
 
     print(
-        f"Episode {episode + 1}/{episodes} | "
+        f"Episode {episode+1}/{episodes} | "
         f"Reward: {round(total_reward, 2)} | "
         f"Epsilon: {round(epsilon, 3)}"
     )
 
+
 # -----------------------------
-# Save trained model
+# Save model
 # -----------------------------
-MODEL_PATH = "dqn_model.pth"
+MODEL_PATH = "C:\\Users\\ppooj\\OneDrive\\Desktop\\WomenSafety\\backend\\rl\\dqn_model.pth"
 
 torch.save(model.state_dict(), MODEL_PATH)
 
 print(f"\nTraining complete.")
-print(f"Model saved as {MODEL_PATH}")
+print(f"Model saved at {MODEL_PATH}")
