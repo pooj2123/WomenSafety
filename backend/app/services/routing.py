@@ -1,16 +1,12 @@
-import os
 import pickle
+import networkx as nx
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print("🚀 ROUTING ENGINE STARTED")
 
-GRAPH_PATH = os.path.join(BASE_DIR, "data", "graph_with_safety.pkl")
-
-print("Loading graph from:", GRAPH_PATH)
-
-with open(GRAPH_PATH, "rb") as f:
+with open("app/data/processed_graph.pkl", "rb") as f:
     G = pickle.load(f)
 
-print(f"Graph loaded: {len(G.nodes)} nodes")
+print("Graph loaded:", len(G.nodes), "nodes")
 
 # ✅ no G parameter
 def shortest_path(source, target):
