@@ -24,3 +24,9 @@ __pycache__/
 *.pyc
 frontend/node_modules/
 .env
+
+backend/venv/
+__pycache__/
+*.pyc
+frontend/node_modules/
+.env
