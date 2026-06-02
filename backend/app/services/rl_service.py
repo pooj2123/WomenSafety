@@ -1,32 +1,32 @@
 import os
-import pickle 
+import pickle
 import torch
+import networkx as nx
+
 from rl.env import GraphEnv
 from rl.dqn import DQN
 
-print("GraphEnv =", GraphEnv)
-print("DQN =", DQN)
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-GRAPH_PATH = os.path.join(
-    CURRENT_DIR,
-    "..",
-    "data",
-    "processed_graph.pkl"
+GRAPH_PATH = os.path.abspath(
+    os.path.join(
+        CURRENT_DIR,
+        "..",
+        "data",
+        "processed_graph.pkl"
+    )
 )
-
-GRAPH_PATH = os.path.abspath(GRAPH_PATH)
-
-print("GRAPH_PATH =", GRAPH_PATH)
-print("EXISTS =", os.path.exists(GRAPH_PATH))
 
 with open(GRAPH_PATH, "rb") as f:
     G = pickle.load(f)
 
 env = GraphEnv(G)
 
-model = DQN(input_dim=4, output_dim=10)
+model = DQN(
+    input_dim=4,
+    output_dim=10
+)
 
 MODEL_PATH = os.path.abspath(
     os.path.join(
@@ -38,9 +38,6 @@ MODEL_PATH = os.path.abspath(
     )
 )
 
-print("MODEL_PATH =", MODEL_PATH)
-print("MODEL EXISTS =", os.path.exists(MODEL_PATH))
-
 model.load_state_dict(
     torch.load(
         MODEL_PATH,
@@ -49,6 +46,9 @@ model.load_state_dict(
 )
 
 model.eval()
+
+print("🚀 ROUTING ENGINE STARTED")
+print("Graph loaded:", len(G.nodes), "nodes")
 
 
 def get_safest_path(start_node, target_node):
@@ -114,6 +114,38 @@ def get_safest_path(start_node, target_node):
         path.append(next_node)
 
         if done:
-            break
+            print("RL reached destination")
+            print("Final route nodes:", len(path))
+            return path
+
+    print("RL failed before destination")
+    print("Current node:", env.current)
+    print("Target node:", target_node)
+
+    try:
+        print("ENTERING FALLBACK")
+
+        remaining = nx.shortest_path(
+            G,
+            env.current,
+            target_node,
+            weight="length"
+        )
+
+        print(
+            "Fallback added:",
+            len(remaining),
+            "nodes"
+        )
+
+        if len(remaining) > 1:
+            path.extend(
+                remaining[1:]
+            )
+
+    except Exception as e:
+        print("FALLBACK ERROR:", str(e))
+
+    print("Final route nodes:", len(path))
 
     return path

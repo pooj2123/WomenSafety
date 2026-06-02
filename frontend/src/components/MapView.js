@@ -12,8 +12,8 @@ import {
   useMap,
 } from "react-leaflet";
 
-import "leaflet/dist/leaflet.css";
 
+import "leaflet/dist/leaflet.css";
 import "../styles/map.css";
 
 import SearchBox from "./SearchBox";
@@ -666,6 +666,7 @@ export default function MapView() {
           width: "100%",
         }}
       >
+        
 
         <FitBounds path={activePath} />
 

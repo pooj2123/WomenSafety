@@ -49,6 +49,8 @@ def get_route(data: dict):
 
         shortest = shortest_path(source, target)
         safest = get_safest_path(source, target)
+        
+
 
         if not shortest:
             raise HTTPException(
@@ -64,6 +66,9 @@ def get_route(data: dict):
 
         distance = calculate_distance(G, shortest)
         time_seconds = distance / 1.4
+
+        safest_distance = calculate_distance(G, safest)
+        safest_time = safest_distance / 1.4
 
         return {
             "success": True,
@@ -141,7 +146,6 @@ def nodes_to_coords(path):
         ])
 
     return coords
-
 
 # -----------------------------
 # Route API

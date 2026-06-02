@@ -112,15 +112,22 @@ const swapLocations = () => {
       // BACKEND API
       // -----------------------------
       const response = await axios.post(
-        "http://127.0.0.1:8000/route",
-        {
-          start_lat: startCoords[0],
-          start_lon: startCoords[1],
+  "http://127.0.0.1:8000/api/navigation/route",
+  {
+    start_lat: startCoords[0],
+    start_lon: startCoords[1],
+    end_lat: destinationCoords[0],
+    end_lon: destinationCoords[1],
+  }
+);
 
-          end_lat: destinationCoords[0],
-          end_lon: destinationCoords[1],
-        }
-      );
+console.log("SAFEST PATH:", response.data.safest);
+console.log("SHORTEST PATH:", response.data.shortest);
+
+setRouteData(response.data);
+
+console.log("SAFEST PATH:", response.data.safest);
+console.log("SHORTEST PATH:", response.data.shortest);
 
       console.log(response.data);
 

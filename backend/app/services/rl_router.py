@@ -1,8 +1,11 @@
 import torch
 import pickle
 import numpy as np
+import networkx as nx
 
 from rl.dqn import DQN
+
+print("USING RL ROUTER FILE:", __file__)
 
 class RLRouter:
     def __init__(self):
@@ -44,7 +47,7 @@ class RLRouter:
         with torch.no_grad():
             q_values = self.model(state)[0]
 
-        valid_q = q_values[: len(neighbors)]
+        valid_q = q_values[:len(neighbors)]
 
         best_idx = torch.argmax(valid_q).item()
 
@@ -56,10 +59,11 @@ class RLRouter:
         target,
         max_steps=100
     ):
+        print("=== NEW RL ROUTER LOADED ===")
         route = [start]
         current = start
 
-        visited = set([start])
+        visited = {start}
 
         for _ in range(max_steps):
 
@@ -81,5 +85,52 @@ class RLRouter:
 
             visited.add(nxt)
             current = nxt
+
+        print("Safest path nodes:", len(route))
+        print("Destination reached:", current == target)
+
+        if current != target:
+            print("ENTERING FALLBACK")
+
+            try:
+                remaining = nx.shortest_path(
+                    self.G,
+                    current,
+                    target,
+                    weight="length"
+                )
+
+                print(
+                    "Fallback added:",
+                    len(remaining),
+                    "nodes"
+                )
+
+                route.extend(remaining[1:])
+
+            except Exception as e:
+                print("FALLBACK ERROR:", str(e))
+
+        print("Final route nodes:", len(route))
+
+
+        print("Current node:", current)
+        print("Target node:", target)
+
+        if current != target:
+            print("ENTERING FALLBACK")
+
+            try:
+                from app.services.routing import shortest_path
+
+                remaining = shortest_path(current, target)
+
+                print("Remaining path:", len(remaining))
+
+                if remaining and len(remaining) > 1:
+                    route.extend(remaining[1:])
+
+            except Exception as e:
+                print("Fallback failed:", e)
 
         return route
