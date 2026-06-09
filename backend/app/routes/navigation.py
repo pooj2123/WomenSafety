@@ -2,10 +2,11 @@ from fastapi import APIRouter, HTTPException
 import osmnx as ox
 from app.services.rl_service import get_safest_path
 from app.services.routing import (
-    G,
+    get_graph,
     shortest_path,
     safest_path,
 )
+
 from app.services.rl_service import get_safest_path
 
 router = APIRouter()
@@ -64,10 +65,12 @@ def get_route(data: dict):
                 detail="Safest path not found"
             )
 
-        distance = calculate_distance(G, shortest)
+        graph = get_graph()
+
+        distance = calculate_distance(graph, shortest)
         time_seconds = distance / 1.4
 
-        safest_distance = calculate_distance(G, safest)
+        safest_distance = calculate_distance(graph, safest)
         safest_time = safest_distance / 1.4
 
         return {
@@ -111,12 +114,11 @@ def get_route(data: dict):
 # -----------------------------
 def get_nearest_node(lat, lon):
     try:
-        return ox.distance.nearest_nodes(G, lon, lat)
+        graph = get_graph()
+        return ox.distance.nearest_nodes(graph, lon, lat)
     except Exception as e:
         print("Nearest node error:", e)
         return None
-
-
 # -----------------------------
 # Distance Calculator
 # -----------------------------
@@ -136,13 +138,14 @@ def calculate_distance(graph, path):
 # Nodes -> Coordinates
 # -----------------------------
 def nodes_to_coords(path):
+    graph = get_graph()
     coords = []
 
     for node in path:
-        node_data = G.nodes[node]
+        node_data = graph.nodes[node]
         coords.append([
-            node_data["y"],  # latitude
-            node_data["x"]   # longitude
+            node_data["y"],
+            node_data["x"]
         ])
 
     return coords

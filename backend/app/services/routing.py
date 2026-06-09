@@ -13,7 +13,6 @@ def get_graph():
         print("Graph loaded:", len(G.nodes), "nodes")
     return G
 
-
 def shortest_path(source, target):
     graph = get_graph()
     return nx.shortest_path(
@@ -23,9 +22,7 @@ def shortest_path(source, target):
         weight="length"
     )
 
-
 def safest_path(source, target):
-
     graph = get_graph()
 
     def cost(u, v, data):
