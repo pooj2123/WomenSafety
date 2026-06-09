@@ -1,10 +1,9 @@
 from fastapi import APIRouter, HTTPException
 import osmnx as ox
-from app.services.rl_service import get_safest_path
+
 from app.services.routing import (
     get_graph,
     shortest_path,
-    safest_path,
 )
 
 from app.services.rl_service import get_safest_path
@@ -115,7 +114,13 @@ def get_route(data: dict):
 def get_nearest_node(lat, lon):
     try:
         graph = get_graph()
+
+        if graph is None:
+            print("Graph is None")
+            return None
+
         return ox.distance.nearest_nodes(graph, lon, lat)
+
     except Exception as e:
         print("Nearest node error:", e)
         return None
@@ -139,6 +144,7 @@ def calculate_distance(graph, path):
 # -----------------------------
 def nodes_to_coords(path):
     graph = get_graph()
+
     coords = []
 
     for node in path:

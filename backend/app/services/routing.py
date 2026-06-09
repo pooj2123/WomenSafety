@@ -7,10 +7,13 @@ G = None
 
 def get_graph():
     global G
+
     if G is None:
         with open("app/data/processed_graph.pkl", "rb") as f:
             G = pickle.load(f)
+
         print("Graph loaded:", len(G.nodes), "nodes")
+
     return G
 
 def shortest_path(source, target):
